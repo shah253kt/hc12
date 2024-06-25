@@ -13,13 +13,12 @@ void setup()
     // hc12.onResponseAvailable = [](char *response)
     // {
     //     Serial.println(response);
+    //     hc12.resetResponse();
     // };
-    Serial.println("Ready");
 }
 
 void loop()
 {
-    char command[] = "AT+RX";
     hc12.update();
 
     if (Serial.available())
