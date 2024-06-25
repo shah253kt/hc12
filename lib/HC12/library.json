@@ -1,0 +1,21 @@
+{
+    "name": "HC12",
+    "version": "1.0.0",
+    "description": "Handles communication and communication of HC12 module.",
+    "keywords": "hc12,regex,callback,at,at command",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/shah253kt/hc12"
+    },
+    "authors": [
+        {
+            "name": "Ahmad Shahril",
+            "url": "https://github.com/shah253kt",
+            "maintainer": true
+        }
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/shah253kt/hc12",
+    "frameworks": "*",
+    "platforms": "*"
+}
