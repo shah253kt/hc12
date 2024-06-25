@@ -4,35 +4,52 @@
 
 HC12 hc12(Serial2, 8);
 
-void matchCallback(const char *match,         // matching string (not null-terminated)
-                    const unsigned int length, // length of matching string
-                    const MatchState &ms)      // MatchState in use (to get captures)
-{
-  char cap[10]; // must be large enough to hold captures
-
-  Serial.print("Matched: ");
-  Serial.write((byte *)match, length);
-  Serial.println();
-
-  for (byte i = 0; i < ms.level; i++)
-  {
-    Serial.print("Capture ");
-    Serial.print(i, DEC);
-    Serial.print(" = ");
-    ms.GetCapture(cap, i);
-    Serial.println(cap);
-  } // end of for each capture
-}
-
 void setup()
 {
-  Serial.begin(115200);
-  Serial2.begin(9600);
+    Serial.begin(115200);
+    Serial2.begin(9600);
 
-  hc12.setOnResponseMatchCallback("(%a+)( )", matchCallback);
+    // hc12.setCommandMode(true);
+    // hc12.onResponseAvailable = [](char *response)
+    // {
+    //     Serial.println(response);
+    // };
+    Serial.println("Ready");
 }
 
 void loop()
 {
-  hc12.update();
+    char command[] = "AT+RX";
+    hc12.update();
+
+    if (Serial.available())
+    {
+        char c = Serial.read();
+
+        switch (c)
+        {
+        case '1':
+        {
+            Serial.print("Setting baud rate: ");
+            Serial.println(hc12.setBaudRate(9600) ? "OK" : "Failed");
+            break;
+        }
+        case '2':
+        {
+            Serial.print("Setting channel: ");
+            Serial.println(hc12.setChannel(50) ? "OK" : "Failed");
+            break;
+        }
+        }
+    }
+
+    // if (Serial.available())
+    // {
+    //     hc12.getStream()->write(Serial.read());
+    // }
+
+    // if (hc12.getStream()->available())
+    // {
+    //     Serial.write(hc12.getStream()->read());
+    // }
 }

@@ -7,26 +7,32 @@ namespace
     constexpr auto TRANSPARENT_MODE = HIGH;
     constexpr auto COMMAND_LENGTH = 15;
     constexpr auto RESPONSE_LENGTH = 50;
-    constexpr auto RESPONSE_TIMEOUT_MS = 1000;
+    constexpr auto RESPONSE_TIMEOUT_MS = 3000;
     constexpr auto UPDATE_TIMEOUT_MS = 100;
+    constexpr auto MODE_CHANGE_WAIT_MS = 100;
 }
 
 HC12::HC12(Stream &stream, uint8_t setPin)
     : m_stream{&stream},
       m_setPin{setPin},
       m_response{new char(RESPONSE_LENGTH)},
-      m_currentResponseIndex{0},
-      m_responseMatchCallbackIsSet{false}
+      m_currentResponseIndex{0}
 {
     if (m_setPin != NO_SET_PIN)
     {
         pinMode(m_setPin, OUTPUT);
+        digitalWrite(m_setPin, TRANSPARENT_MODE);
     }
 }
 
 HC12::~HC12()
 {
     delete[] m_response;
+}
+
+Stream *HC12::getStream()
+{
+    return m_stream;
 }
 
 int HC12::available()
@@ -45,32 +51,19 @@ void HC12::update()
 
     while (millis() - updateStartedAt < UPDATE_TIMEOUT_MS && available())
     {
-        m_response[m_currentResponseIndex] = read();
-        m_response[m_currentResponseIndex + 1] = '\0';
+        m_response[m_currentResponseIndex++] = read();
+        m_response[m_currentResponseIndex] = '\0';
 
         if (isResponseFull())
         {
-            m_currentResponseIndex = 0;
+            resetResponse();
             return;
         }
     }
 
-    if (onResponseAvailable)
+    if (onResponseAvailable && strlen(m_response) > 0)
     {
         onResponseAvailable(m_response);
-    }
-
-    if (!m_responseMatchCallbackIsSet)
-    {
-        return;
-    }
-
-    MatchState ms(m_response);
-
-    if (ms.GlobalMatch(m_regex, m_matchCallback) > 0)
-    {
-        m_currentResponseIndex = 0;
-        m_response[0] = '\0';
     }
 }
 
@@ -96,7 +89,7 @@ void HC12::send(const float value, uint8_t width, uint8_t precision)
 bool HC12::setBaudRate(uint32_t baudRate)
 {
     char command[COMMAND_LENGTH];
-    sprintf(command, "AT+B%ld", baudRate);
+    sprintf(command, "AT+B%ld\n", baudRate);
     return sendCommandExpectingOkResponse(command);
 }
 
@@ -108,30 +101,33 @@ bool HC12::setChannel(uint8_t channel)
     }
 
     char command[COMMAND_LENGTH];
-    sprintf(command, "AT+C%03d", channel);
+    sprintf(command, "AT+C%03d\n", channel);
     return sendCommandExpectingOkResponse(command);
 }
 
-void HC12::setOnResponseMatchCallback(const char *regex, GlobalMatchCallback callback)
+void HC12::setCommandMode(bool isCommandMode)
 {
-    m_responseMatchCallbackIsSet = true;
-    strcpy(m_regex, regex);
-    m_matchCallback = callback;
+    if (m_setPin != NO_SET_PIN)
+    {
+        digitalWrite(m_setPin, isCommandMode ? COMMAND_MODE : TRANSPARENT_MODE);
+        delay(MODE_CHANGE_WAIT_MS);
+    }
+}
+
+void HC12::resetResponse()
+{
+    m_currentResponseIndex = 0;
+    m_response[0] = '\0';
 }
 
 bool HC12::sendCommandExpectingOkResponse(char *msg)
 {
-    if (m_setPin != NO_SET_PIN)
-    {
-        digitalWrite(m_setPin, COMMAND_MODE);
-    }
-
-    Serial.print("Sending command: ");
-    Serial.println(msg);
+    setCommandMode(true);
+    resetResponse();
     send(msg);
+
     const auto commandSentAt = millis();
     auto receivedOkResponse = false;
-    m_currentResponseIndex = 0;
 
     while (millis() - commandSentAt < RESPONSE_TIMEOUT_MS)
     {
@@ -146,8 +142,8 @@ bool HC12::sendCommandExpectingOkResponse(char *msg)
             break;
         }
 
-        m_response[m_currentResponseIndex] = read();
-        m_response[m_currentResponseIndex + 1] = '\0';
+        m_response[m_currentResponseIndex++] = read();
+        m_response[m_currentResponseIndex] = '\0';
 
         if (strstr(m_response, "OK") != nullptr)
         {
@@ -162,11 +158,7 @@ bool HC12::sendCommandExpectingOkResponse(char *msg)
         read();
     }
 
-    if (m_setPin != NO_SET_PIN)
-    {
-        digitalWrite(m_setPin, TRANSPARENT_MODE);
-    }
-
+    setCommandMode(false);
     return receivedOkResponse;
 }
 
