@@ -20,19 +20,21 @@ public:
     void send(int value);
     void send(float value, uint8_t width = 6, uint8_t precision = 2);
 
+    void setCommandMode(bool isCommandMode);
     bool setBaudRate(uint32_t baudRate);
     bool setChannel(uint8_t channel);
-
-    void setCommandMode(bool isCommandMode);
+    
+    void onCharacterReceived(char c, void (*funcPtr)());
+    char *getResponse();
     void resetResponse();
-
-    void (*onResponseAvailable)(char *response);
 
 private:
     Stream *m_stream;
     uint8_t m_setPin;
     char *m_response;
     uint8_t m_currentResponseIndex;
+    char m_characterToCheck;
+    void (*m_onCharacterReceivedEventHandler)();
 
     bool sendCommandExpectingOkResponse(char *msg);
     bool isResponseFull();

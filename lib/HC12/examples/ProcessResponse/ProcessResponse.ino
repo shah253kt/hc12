@@ -13,15 +13,11 @@ void setup()
     hc12.setChannel(50);
 
     // In this case, you can add Regex for example to check if the response match anything of interest to you.
-    hc12.onResponseAvailable = [](char *response)
+    hc12.onCharacterReceived('\n', []
     {
-        if (false) // Check if response is ready to be processed.
-        {
-            return;
-        }
-
+        auto msg = hc12.getResponse();
         hc12.resetResponse(); // Reset the response once it is processed.
-    };
+    });
 }
 
 void loop()

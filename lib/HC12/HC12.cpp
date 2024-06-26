@@ -16,7 +16,8 @@ HC12::HC12(Stream &stream, uint8_t setPin)
     : m_stream{&stream},
       m_setPin{setPin},
       m_response{new char(RESPONSE_LENGTH)},
-      m_currentResponseIndex{0}
+      m_currentResponseIndex{0},
+      m_characterToCheck{'\n'}
 {
     if (m_setPin != NO_SET_PIN)
     {
@@ -51,19 +52,21 @@ void HC12::update()
 
     while (millis() - updateStartedAt < UPDATE_TIMEOUT_MS && available())
     {
-        m_response[m_currentResponseIndex++] = read();
+        char c = read();
+        
+        m_response[m_currentResponseIndex++] = c;
         m_response[m_currentResponseIndex] = '\0';
+
+        if (m_onCharacterReceivedEventHandler != nullptr && c == m_characterToCheck)
+        {
+            m_onCharacterReceivedEventHandler();
+        }
 
         if (isResponseFull())
         {
             resetResponse();
             return;
         }
-    }
-
-    if (onResponseAvailable && strlen(m_response) > 0)
-    {
-        onResponseAvailable(m_response);
     }
 }
 
@@ -112,6 +115,17 @@ void HC12::setCommandMode(bool isCommandMode)
         digitalWrite(m_setPin, isCommandMode ? COMMAND_MODE : TRANSPARENT_MODE);
         delay(MODE_CHANGE_WAIT_MS);
     }
+}
+
+void HC12::onCharacterReceived(const char c, void (*funcPtr)())
+{
+    m_characterToCheck = c;
+    m_onCharacterReceivedEventHandler = funcPtr;
+}
+
+char *HC12::getResponse()
+{
+    return m_response;
 }
 
 void HC12::resetResponse()

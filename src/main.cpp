@@ -10,11 +10,10 @@ void setup()
     Serial2.begin(9600);
 
     // hc12.setCommandMode(true);
-    // hc12.onResponseAvailable = [](char *response)
-    // {
-    //     Serial.println(response);
-    //     hc12.resetResponse();
-    // };
+    hc12.onCharacterReceived('\n', []
+                             {
+                                Serial.println(hc12.getResponse());
+                                hc12.resetResponse(); });
 }
 
 void loop()

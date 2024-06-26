@@ -1,6 +1,6 @@
 {
     "name": "HC12",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Handles communication and communication of HC12 module.",
     "keywords": "hc12,callback,at command",
     "repository": {
