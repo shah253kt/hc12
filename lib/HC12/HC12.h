@@ -2,6 +2,10 @@
 
 #include "Arduino.h"
 
+#ifndef INVALID_CHANNEL
+#define INVALID_CHANNEL 0
+#endif
+
 #ifndef NO_SET_PIN
 #define NO_SET_PIN -1
 #endif
@@ -23,7 +27,8 @@ public:
     void setCommandMode(bool isCommandMode);
     bool setBaudRate(uint32_t baudRate);
     bool setChannel(uint8_t channel);
-    
+    uint8_t getChannel();
+
     void onCharacterReceived(char c, void (*funcPtr)());
     char *getResponse();
     void resetResponse();

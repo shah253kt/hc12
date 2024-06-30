@@ -1,6 +1,6 @@
 {
     "name": "HC12",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Handles communication and communication of HC12 module.",
     "keywords": "hc12,callback,at command",
     "repository": {
@@ -17,5 +17,9 @@
     "license": "MIT",
     "homepage": "https://github.com/shah253kt/hc12",
     "frameworks": "*",
-    "platforms": "*"
+    "platforms": "*",
+    "dependencies":
+    {
+        "nickgammon/Regexp": "^0.1.0"
+    }
 }

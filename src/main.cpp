@@ -12,6 +12,7 @@ void setup()
     // hc12.setCommandMode(true);
     hc12.onCharacterReceived('\n', []
                              {
+                                Serial.print("Response: ");
                                 Serial.println(hc12.getResponse());
                                 hc12.resetResponse(); });
 }
@@ -36,6 +37,20 @@ void loop()
         {
             Serial.print("Setting channel: ");
             Serial.println(hc12.setChannel(50) ? "OK" : "Failed");
+            break;
+        }
+        case '3':
+        {
+            Serial.print("Getting channel: ");
+            const auto channel = hc12.getChannel();
+            if (channel == INVALID_CHANNEL)
+            {
+                Serial.println("Invalid channel received.");
+            }
+            else
+            {
+                Serial.println(channel);
+            }
             break;
         }
         }

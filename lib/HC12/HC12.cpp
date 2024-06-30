@@ -1,5 +1,7 @@
 #include "HC12.h"
 
+#include "Regexp.h"
+
 namespace
 {
     constexpr auto MAX_CHANNEL = 127;
@@ -53,7 +55,7 @@ void HC12::update()
     while (millis() - updateStartedAt < UPDATE_TIMEOUT_MS && available())
     {
         char c = read();
-        
+
         m_response[m_currentResponseIndex++] = c;
         m_response[m_currentResponseIndex] = '\0';
 
@@ -106,6 +108,53 @@ bool HC12::setChannel(uint8_t channel)
     char command[COMMAND_LENGTH];
     sprintf(command, "AT+C%03d\n", channel);
     return sendCommandExpectingOkResponse(command);
+}
+
+uint8_t HC12::getChannel()
+{
+    uint8_t channel = INVALID_CHANNEL;
+    setCommandMode(true);
+    resetResponse();
+    send("AT+RC\n");
+
+    const auto commandSentAt = millis();
+
+    while (millis() - commandSentAt < RESPONSE_TIMEOUT_MS)
+    {
+        if (!available())
+        {
+            continue;
+        }
+
+        if (isResponseFull())
+        {
+            m_currentResponseIndex = 0;
+            break;
+        }
+
+        m_response[m_currentResponseIndex++] = read();
+        m_response[m_currentResponseIndex] = '\0';
+
+        static MatchState ms;
+        ms.Target(m_response);
+        char buffer[strlen(m_response)];
+
+        if (ms.Match("OK%+RC(%d%d%d)") > 0)
+        {
+            ms.GetCapture(buffer, 0);
+            channel = atoi(buffer);
+            break;
+        }
+    }
+
+    // Clear buffer
+    while (available())
+    {
+        read();
+    }
+
+    setCommandMode(false);
+    return channel;
 }
 
 void HC12::setCommandMode(bool isCommandMode)
